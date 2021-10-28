@@ -153,7 +153,8 @@ static int lept_parse_string(lept_context *c, lept_value *v) {
       c->top = head;
       return LEPT_PARSE_MISS_QUOTATION_MARK;
     default:
-      if (ch < 0x20) {
+      /* [fix] unsigned char */
+      if ((unsigned char)ch < 0x20) {
         c->top = head;
         return LEPT_PARSE_INVALID_STRING_CHAR;
       }
@@ -214,15 +215,13 @@ lept_type lept_get_type(const lept_value *v) {
 
 int lept_get_boolean(const lept_value *v) {
   assert(v != NULL && (v->type == LEPT_FALSE || v->type == LEPT_TRUE));
-  return 1 ? v->type == LEPT_TRUE : 0;
+  return LEPT_TRUE ? v->type == LEPT_TRUE : LEPT_FALSE;
 }
 
 void lept_set_boolean(lept_value *v, int b) {
-  if (b == 1) {
-    v->type = LEPT_TRUE;
-  } else if (b == 0) {
-    v->type = LEPT_FALSE;
-  }
+  /* [fix] lept_free */
+  lept_free(v);
+  v->type = b ? LEPT_TRUE : LEPT_FALSE;
 }
 
 double lept_get_number(const lept_value *v) {
@@ -232,7 +231,8 @@ double lept_get_number(const lept_value *v) {
 
 void lept_set_number(lept_value *v, double n) {
   assert(v != NULL);
-  /* lept_free(v); */
+  /* [fix] lept_free */
+  lept_free(v);
   /* v->u = (double)malloc(sizeof(double)); */
   v->u.n = n;
   v->type = LEPT_NUMBER;
