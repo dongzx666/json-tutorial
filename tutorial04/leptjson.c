@@ -114,6 +114,7 @@ static const char *lept_parse_hex4(const char *p, unsigned *u) {
 }
 
 static void lept_encode_utf8(lept_context *c, unsigned u) {
+  /* TODO(fengyu): 直接低代理算不算错误？ [28-10-21] */
   if (u <= 0x7F)
     PUTC(c, u & 0xFF);
   else if (u <= 0x7FF) {

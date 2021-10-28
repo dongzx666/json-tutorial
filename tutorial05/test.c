@@ -32,7 +32,7 @@ static int test_pass = 0;
 #if defined(_MSC_VER)
 #define EXPECT_EQ_SIZE_T(expect, actual) EXPECT_EQ_BASE((expect) == (actual), (size_t)expect, (size_t)actual, "%Iu")
 #else
-#define EXPECT_EQ_SIZE_T(expect, actual) EXPECT_EQ_BASE((expect) == (actual), (size_t)expect, (size_t)actual, "%zu")
+#define EXPECT_EQ_SIZE_T(expect, actual) EXPECT_EQ_BASE((expect) == (actual), (unsigned)(size_t)expect, (unsigned)(size_t)actual, "%u")
 #endif
 
 static void test_parse_null() {
@@ -127,13 +127,55 @@ static void test_parse_string() {
     TEST_STRING("\xF0\x9D\x84\x9E", "\"\\ud834\\udd1e\"");  /* G clef sign U+1D11E */
 }
 
+
 static void test_parse_array() {
     lept_value v;
+    lept_value * temp;
+    lept_value * temp_1;
 
     lept_init(&v);
     EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ ]"));
     EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
     EXPECT_EQ_SIZE_T(0, lept_get_array_size(&v));
+    lept_free(&v);
+
+    lept_init(&v);
+    EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ null , false , true , 123 , \"abc\" ]"));
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
+    EXPECT_EQ_SIZE_T(5, lept_get_array_size(&v));
+    temp = v.u.a.e;
+    EXPECT_EQ_INT(LEPT_NULL, lept_get_type(temp++));
+    EXPECT_FALSE(lept_get_boolean(temp++));
+    EXPECT_TRUE(lept_get_boolean(temp++));
+    EXPECT_EQ_DOUBLE((double)123, lept_get_number(temp++));
+    EXPECT_EQ_STRING("abc", lept_get_string(temp), lept_get_string_length(temp));
+    lept_free(&v);
+
+    lept_init(&v);
+    EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]"));
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
+    EXPECT_EQ_SIZE_T(4, lept_get_array_size(&v));
+    temp = v.u.a.e;
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(temp));
+    EXPECT_EQ_SIZE_T(0, lept_get_array_size(temp));
+    temp++;
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(temp));
+    EXPECT_EQ_SIZE_T(1, lept_get_array_size(temp));
+    temp_1 = temp->u.a.e;
+    EXPECT_EQ_DOUBLE((double)0, lept_get_number(temp_1));
+    temp++;
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(temp));
+    EXPECT_EQ_SIZE_T(2, lept_get_array_size(temp));
+    temp_1 = temp->u.a.e;
+    EXPECT_EQ_DOUBLE((double)0, lept_get_number(temp_1++));
+    EXPECT_EQ_DOUBLE((double)1, lept_get_number(temp_1));
+    temp++;
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(temp));
+    EXPECT_EQ_SIZE_T(3, lept_get_array_size(temp));
+    temp_1 = temp->u.a.e;
+    EXPECT_EQ_DOUBLE((double)0, lept_get_number(temp_1++));
+    EXPECT_EQ_DOUBLE((double)1, lept_get_number(temp_1++));
+    EXPECT_EQ_DOUBLE((double)2, lept_get_number(temp_1));
     lept_free(&v);
 }
 
@@ -167,10 +209,8 @@ static void test_parse_invalid_value() {
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "nan");
 
     /* invalid value in array */
-#if 0
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "[1,]");
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "[\"a\", nul]");
-#endif
 }
 
 static void test_parse_root_not_singular() {
@@ -229,12 +269,10 @@ static void test_parse_invalid_unicode_surrogate() {
 }
 
 static void test_parse_miss_comma_or_square_bracket() {
-#if 0
     TEST_ERROR(LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1");
     TEST_ERROR(LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1}");
     TEST_ERROR(LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1 2");
     TEST_ERROR(LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[[]");
-#endif
 }
 
 static void test_parse() {
