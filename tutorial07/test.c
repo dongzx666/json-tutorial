@@ -32,7 +32,7 @@ static int test_pass = 0;
 #if defined(_MSC_VER)
 #define EXPECT_EQ_SIZE_T(expect, actual) EXPECT_EQ_BASE((expect) == (actual), (size_t)expect, (size_t)actual, "%Iu")
 #else
-#define EXPECT_EQ_SIZE_T(expect, actual) EXPECT_EQ_BASE((expect) == (actual), (size_t)expect, (size_t)actual, "%zu")
+#define EXPECT_EQ_SIZE_T(expect, actual) EXPECT_EQ_BASE((expect) == (actual), (unsigned)(size_t)expect, (unsigned)(size_t)actual, "%u")
 #endif
 
 static void test_parse_null() {
